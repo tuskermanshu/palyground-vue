@@ -26,14 +26,49 @@ onUnmounted(() => {
   window.removeEventListener('hashchange', handleHashChange)
 })
 
-const handleShare = () => {
+const handleShare = async () => {
   const url = window.location.href
-  navigator.clipboard.writeText(url).then(() => {
+  
+  try {
+    // 现代浏览器 API
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(url)
+      ElMessage({
+        message: '链接已复制到粘贴板',
+        type: 'success',
+      })
+    } else {
+      // 降级方案
+      const textArea = document.createElement('textarea')
+      textArea.value = url
+      // 防止滚动到底部
+      textArea.style.cssText = 'position:fixed;top:-999px;left:-999px;'
+      document.body.appendChild(textArea)
+      textArea.focus()
+      textArea.select()
+      
+      try {
+        document.execCommand('copy')
+        ElMessage({
+          message: '链接已复制到粘贴板',
+          type: 'success',
+        })
+      } catch (err) {
+        ElMessage({
+          message: '复制失败，请手动复制',
+          type: 'error',
+        })
+      } finally {
+        textArea.remove()
+      }
+    }
+  } catch (err) {
+    console.error('复制失败:', err)
     ElMessage({
-      message: '链接已复制到粘贴板',
-      type: 'success',
+      message: '复制失败，请手动复制',
+      type: 'error',
     })
-  })
+  }
 }
 
 
